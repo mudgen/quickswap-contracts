@@ -9,18 +9,19 @@ import {SafeMath} from "./libraries/SafeMath.sol";
 import {IStakingRewards} from "./interfaces/IStakingRewards.sol";
 
 
-struct Staker {
-    uint256 balance;
-    uint256 userRewardPerTokenPaid;
-    uint256 reward;
+struct Staker {    
+    uint128 userRewardPerTokenPaid;
+    uint128 reward;
+    uint128 balance;
 }
 
 struct Staking {
-    uint256 periodFinish;
-    uint256 lastUpdateTime;
-    uint256 rewardRate;    
-    uint256 rewardPerTokenStored;
-    uint256 totalSupply;
+    uint32 periodFinish;
+    uint32 lastUpdateTime;
+    uint32 index; // index into rewardTokens array
+    uint128 rewardRate;    
+    uint128 rewardPerTokenStored;
+    uint128 totalSupply;
     // staker => staker info    
     mapping(address => Staker) stakers;    
 }
@@ -29,14 +30,19 @@ struct Staking {
 struct AppStorage {
     address owner;
     mapping(address => Staking) staking;
-
+    address[] rewardTokens;
+    // staker address => array of reward tokens
+    mapping(address => address[]) stakerRewardTokens;
+    // staker address => rewardToken => index in stakerRewardTokens array
+    mapping(address => mapping(address => uint256)) stakerRewardTokenIndex;
 }
 
 // UniswapV2Router02 constructor args:  constructor(address _factory, address _WETH)
 contract QuickswapRouterV1 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32, 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270) {
     AppStorage s;
 
-    using SafeMath for uint;
+    using SafeMath for uint256;
+    using SafeMath for uint128;
 
     // address constant public QUICKSWAP_ROUTER = 0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff;   
     IDragonLair constant public DRAGON_LAIR = IDragonLair(0xf28164A485B0B2C90639E47b0f377b4a438a16B1);
@@ -92,7 +98,7 @@ contract QuickswapRouterV1 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941
         }
         else {
             return
-                staking.rewardPerTokenStored.add(
+                uint256(staking.rewardPerTokenStored).add(
                     lastTimeRewardApplicable(_rewardToken).sub(staking.lastUpdateTime).mul(staking.rewardRate).mul(1e18).div(staking.totalSupply)
                 );
         }
@@ -101,7 +107,7 @@ contract QuickswapRouterV1 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941
     function earned(address _rewardToken, address _account) public view returns (uint256) {
         Staking storage staking = s.staking[_rewardToken];
         Staker storage staker = staking.stakers[_account];
-        return staker.balance.mul(rewardPerToken(_rewardToken).sub(staker.userRewardPerTokenPaid)).div(1e18).add(staker.reward);        
+        return uint256(staker.balance).mul(rewardPerToken(_rewardToken).sub(staker.userRewardPerTokenPaid)).div(1e18).add(staker.reward);        
     }
 
     struct StakeInput {
@@ -115,9 +121,9 @@ contract QuickswapRouterV1 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941
             require(stakeInput.amount > 0, "Cannot stake 0");
             updateReward(stakeInput.rewardToken, msg.sender);
             Staking storage staking = s.staking[stakeInput.rewardToken];
-            staking.totalSupply = staking.totalSupply.add(stakeInput.amount);
+            staking.totalSupply = uint128(staking.totalSupply.add(stakeInput.amount));
             Staker storage staker = staking.stakers[msg.sender];
-            staker.balance = staker.balance.add(stakeInput.amount);
+            staker.balance = uint128(staker.balance.add(stakeInput.amount));
             TransferHelper.safeTransferFrom(address(DRAGON_LAIR), msg.sender, address(this), stakeInput.amount);
             emit Staked(stakeInput.rewardToken, msg.sender, stakeInput.amount);
         }        
@@ -125,29 +131,42 @@ contract QuickswapRouterV1 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941
 
     function withdraw(StakeInput[] calldata _stakes) external {
         for(uint256 i; i < _stakes.length; i++) {
-            StakeInput calldata stakeInput = _stakes[i];
-            require(stakeInput.amount > 0, "Cannot withdraw 0");
-            updateReward(stakeInput.rewardToken, msg.sender);
-            Staking storage staking = s.staking[stakeInput.rewardToken];
-            staking.totalSupply = staking.totalSupply.sub(stakeInput.amount);
-            Staker storage staker = staking.stakers[msg.sender];
-            staker.balance = staker.balance.sub(stakeInput.amount);
-            TransferHelper.safeTransfer(address(DRAGON_LAIR), msg.sender, stakeInput.amount);
-            emit Withdrawn(stakeInput.rewardToken, msg.sender, stakeInput.amount);
+            _withdraw(_stakes[i].rewardToken, _stakes[i].amount);            
         }        
     }
 
-    function withdraw(address[] calldata _rewardTokens) public {
+    function _withdraw(address _rewardToken, uint256 _amount) internal {        
+        require(_amount > 0, "Cannot withdraw 0");
+        updateReward(_rewardToken, msg.sender);
+        Staking storage staking = s.staking[_rewardToken];
+        uint256 rewardTotalSupply = staking.totalSupply.sub(_amount);
+        staking.totalSupply = uint128(rewardTotalSupply);
+        Staker storage staker = staking.stakers[msg.sender];
+        uint256 balance = staker.balance.sub(_amount);
+        staker.balance = uint128(balance);
+        if(balance == 0) {
+            uint256 lastIndex = 
+        }
+        if(rewardTotalSupply == 0) {
+            uint256 lastIndex = s.rewardTokens.length - 1;
+            uint256 index = staking.index;
+            if(lastIndex != index) {
+                address lastRewardToken = s.rewardTokens[lastIndex];
+                s.rewardTokens[index] = lastRewardToken;
+                s.staking[lastRewardToken].index = uint32(index);
+            }
+            s.rewardTokens.pop();
+            delete s.staking[_rewardToken];
+        }
+        TransferHelper.safeTransfer(address(DRAGON_LAIR), msg.sender, _amount);
+        emit Withdrawn(_rewardToken, msg.sender, _amount);        
+    }
+
+    function withdrawAll(address[] calldata _rewardTokens) public {
         for(uint256 i; i < _rewardTokens.length; i++) {
-            address rewardToken = _rewardTokens[i];            
-            updateReward(rewardToken, msg.sender);
-            Staking storage staking = s.staking[rewardToken];
-            Staker storage staker = staking.stakers[msg.sender];
-            uint256 balance = staker.balance;
-            staking.totalSupply = staking.totalSupply.sub(balance);            
-            staker.balance = 0;
-            TransferHelper.safeTransfer(address(DRAGON_LAIR), msg.sender, balance);
-            emit Withdrawn(rewardToken, msg.sender, balance);
+            address rewardToken = _rewardTokens[i];
+            uint256 balance = s.staking[rewardToken].stakers[msg.sender].balance;
+            _withdraw(rewardToken, balance);            
         }        
     }
 
@@ -173,7 +192,7 @@ contract QuickswapRouterV1 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941
             Staking storage staking = s.staking[rewardToken];
             Staker storage staker = staking.stakers[msg.sender];
             uint256 balance = staker.balance;
-            staking.totalSupply = staking.totalSupply.sub(balance);            
+            staking.totalSupply = uint128(staking.totalSupply.sub(balance));
             staker.balance = 0;
             TransferHelper.safeTransfer(address(DRAGON_LAIR), msg.sender, balance);
             emit Withdrawn(rewardToken, msg.sender, balance);
@@ -188,11 +207,11 @@ contract QuickswapRouterV1 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941
 
     function updateReward(address _rewardToken, address _account) internal {
         Staking storage staking = s.staking[_rewardToken];
-        staking.rewardPerTokenStored = rewardPerToken(_rewardToken);
-        staking.lastUpdateTime = lastTimeRewardApplicable(_rewardToken);
+        staking.rewardPerTokenStored = uint128(rewardPerToken(_rewardToken));
+        staking.lastUpdateTime = uint32(lastTimeRewardApplicable(_rewardToken));
         if (_account != address(0)) {
             Staker storage staker = staking.stakers[_account];
-            staker.reward = earned(_rewardToken, _account);
+            staker.reward = uint128(earned(_rewardToken, _account));
             staker.userRewardPerTokenPaid = staking.rewardPerTokenStored;
         }        
     }
@@ -207,6 +226,8 @@ contract QuickswapRouterV1 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941
     function notifyRewardAmount(RewardInfo[] calldata _rewards) external onlyOwner {
         for(uint256 i; i < _rewards.length; i++) {
             RewardInfo calldata reward = _rewards[i];
+            require(reward.rewardToken != address(0), "Reward token cannot be address(0)");
+            addRewardToken(reward.rewardToken);
             updateReward(reward.rewardToken, address(0));
             Staking storage staking = s.staking[reward.rewardToken];
             require(block.timestamp.add(reward.rewardDuration) >= staking.periodFinish, "Cannot reduce existing period");
@@ -215,11 +236,11 @@ contract QuickswapRouterV1 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941
             if (block.timestamp >= staking.periodFinish) {
                 rewardRate = reward.reward.div(reward.rewardDuration);
             } else {
-                uint256 remaining = staking.periodFinish.sub(block.timestamp);
+                uint256 remaining = uint256(staking.periodFinish).sub(block.timestamp);
                 uint256 leftover = remaining.mul(staking.rewardRate);
                 rewardRate = reward.reward.add(leftover).div(reward.rewardDuration);
             }
-            staking.rewardRate = rewardRate;
+            staking.rewardRate = uint128(rewardRate);
 
             // Ensure the provided reward amount is not more than the balance in the contract.
             // This keeps the reward rate in the right range, preventing overflows due to
@@ -228,10 +249,18 @@ contract QuickswapRouterV1 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941
             uint balance = IERC20(reward.rewardToken).balanceOf(address(this));
             require(rewardRate <= balance.div(reward.rewardDuration), "Provided reward too high");
 
-            staking.lastUpdateTime = block.timestamp;
+            staking.lastUpdateTime = uint32(block.timestamp);
             uint256 periodFinish = block.timestamp.add(reward.rewardDuration);
-            staking.periodFinish = periodFinish;
+            staking.periodFinish = uint32(periodFinish);
             emit RewardAdded(reward.rewardToken, reward.reward, periodFinish);
+        }
+    }
+
+    function addRewardToken(address _rewardToken) internal {
+        uint256 index = s.staking[_rewardToken].index;
+        if(index == 0 && s.rewardTokens[index] != _rewardToken) {
+            s.staking[_rewardToken].index = uint32(s.rewardTokens.length);
+            s.rewardTokens.push(_rewardToken);
         }
     }
 
