@@ -54,25 +54,39 @@ contract QuickswapRouterV1 {
         IERC20(QUICK).approve(address(DRAGON_LAIR), type(uint256).max);
     }
 
-    function enterDragonLair(uint256 _quickAmount) external {
-
+    function enterDragonLair(uint256 _quickAmount) public {
+        TransferHelper.safeTransferFrom(QUICK, msg.sender, address(this), _quickAmount);
+        uint256 dQuick = DRAGON_LAIR.QUICKForDQUICK(_quickAmount);
+        DRAGON_LAIR.enter(_quickAmount);
+        TransferHelper.safeTransferFrom(address(DRAGON_LAIR), address(this), msg.sender, dQuick);
     }
 
-    function enterDragonLairAndSyrup(address[] calldata _syrupPools, uint256[] calldata _quickAmounts) external {
-      require(_syrupPools.length == _quickAmounts.length, "Input lengths do not match");
-      uint256 totalQuickAmount;
-      for(uint i; i < _quickAmounts.length; i++) {        
-          totalQuickAmount = SafeMath.add(_quickAmounts[i], totalQuickAmount);
-          //IStakingRewards(_syrupPools[i]).stake(msg.sender, DRAGON_LAIR.QUICKForDQUICK(_quickAmounts[i]));                        
-      }
-      TransferHelper.safeTransferFrom(QUICK, msg.sender, address(this), totalQuickAmount);
-      DRAGON_LAIR.enter(totalQuickAmount);
+
+    struct QuickStakeInput {
+        address rewardToken;
+        uint256 quickAmount;
+    }
+
+    // I need to test this function
+    function enterDragonLairAndStake(QuickStakeInput[] calldata _quickStakeInput) external {        
+        StakeInput[] memory stakeInput = new StakeInput[](_quickStakeInput.length);
+        uint256 totalQuick;
+        for(uint i; i < _quickStakeInput.length; i++) {
+            totalQuick += _quickStakeInput[i].quickAmount;
+            stakeInput[i] = StakeInput({
+                rewardToken: _quickStakeInput[i].rewardToken,
+                amount: DRAGON_LAIR.QUICKForDQUICK(_quickStakeInput[i].quickAmount)
+            });
+        }
+        TransferHelper.safeTransferFrom(QUICK, msg.sender, address(this), totalQuick);
+        DRAGON_LAIR.enter(totalQuick);
+        _stake(msg.sender, stakeInput);
     }
 
     // staking functions
 
     function totalSupply(address _rewardToken) external view returns (uint256) {
-          return s.staking[_rewardToken].totalSupply;
+        return s.staking[_rewardToken].totalSupply;
     }  
 
     function balanceOf(address _rewardToken, address _account) external view returns (uint256) {
@@ -172,29 +186,33 @@ contract QuickswapRouterV1 {
         uint256 amount;        
     }
     
-    function stake(StakeInput[] calldata _stakes) external {
-        uint256 totalStaked;
+    function _stake(address _staker, StakeInput[] memory _stakes) internal returns (uint256 totalStaked_) {        
         for(uint256 i; i < _stakes.length; i++) {
-            StakeInput calldata stakeInput = _stakes[i];
+            StakeInput memory stakeInput = _stakes[i];
             require(stakeInput.amount > 0, "Cannot stake 0");
             Staking storage staking = s.staking[stakeInput.rewardToken];
             if(staking.index == 0) {
                 require(s.rewardTokens[0] == stakeInput.rewardToken, "rewardToken not authorized for staking");
             }
-            updateReward(stakeInput.rewardToken, msg.sender);            
+            updateReward(stakeInput.rewardToken, _staker);            
             staking.totalSupply = staking.totalSupply + stakeInput.amount;
-            Staker storage staker = staking.stakers[msg.sender];
+            Staker storage staker = staking.stakers[_staker];
             uint256 balance = staker.balance;
             staker.balance = balance + stakeInput.amount;
             if(balance == 0 && staker.reward == 0) {                
-                s.stakerRewardTokenIndex[msg.sender][stakeInput.rewardToken] = s.stakerRewardTokens[msg.sender].length;
-                s.stakerRewardTokens[msg.sender].push(stakeInput.rewardToken);
+                s.stakerRewardTokenIndex[_staker][stakeInput.rewardToken] = s.stakerRewardTokens[_staker].length;
+                s.stakerRewardTokens[_staker].push(stakeInput.rewardToken);
             }
-            totalStaked += stakeInput.amount;            
-            emit Staked(stakeInput.rewardToken, msg.sender, stakeInput.amount);
-        }
-        TransferHelper.safeTransferFrom(address(DRAGON_LAIR), msg.sender, address(this), totalStaked);
+            totalStaked_ += stakeInput.amount;            
+            emit Staked(stakeInput.rewardToken, _staker, stakeInput.amount);
+        }        
     }   
+
+    function stake(StakeInput[] memory _stakes) external {
+        uint256 totalStaked = _stake(msg.sender, _stakes);
+        TransferHelper.safeTransferFrom(address(DRAGON_LAIR), msg.sender, address(this), totalStaked);
+    }
+
 
     function withdraw(StakeInput[] calldata _stakes) external {
         uint256 totalWithdrawAmount;
