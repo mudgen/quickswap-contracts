@@ -53,37 +53,8 @@ contract QuickswapSyrupPools {
         s.owner = _owner;
         IERC20(QUICK).approve(address(DRAGON_LAIR), type(uint256).max);
     }
-
-    function enterDragonLair(uint256 _quickAmount) public {
-        SafeERC20.safeTransferFrom(QUICK, msg.sender, address(this), _quickAmount);
-        uint256 dQuick = DRAGON_LAIR.QUICKForDQUICK(_quickAmount);
-        DRAGON_LAIR.enter(_quickAmount);
-        SafeERC20.safeTransferFrom(address(DRAGON_LAIR), address(this), msg.sender, dQuick);
-    }
-
-
-    struct QuickStakeInput {
-        address rewardToken;
-        uint256 quickAmount;
-    }
-
-    // I need to test this function
-    function enterDragonLairAndStake(QuickStakeInput[] calldata _quickStakeInput) external {        
-        StakeInput[] memory stakeInput = new StakeInput[](_quickStakeInput.length);
-        uint256 totalQuick;
-        for(uint i; i < _quickStakeInput.length; i++) {
-            totalQuick += _quickStakeInput[i].quickAmount;
-            stakeInput[i] = StakeInput({
-                rewardToken: _quickStakeInput[i].rewardToken,
-                amount: DRAGON_LAIR.QUICKForDQUICK(_quickStakeInput[i].quickAmount)
-            });
-        }
-        SafeERC20.safeTransferFrom(QUICK, msg.sender, address(this), totalQuick);
-        DRAGON_LAIR.enter(totalQuick);
-        _stake(stakeInput, msg.sender);
-    }
-
-    // staking functions
+    
+    // read only functions /////////////////////////////////////////////////////////////
 
     function totalSupply(address _rewardToken) external view returns (uint256) {
         return s.staking[_rewardToken].totalSupply;
@@ -113,7 +84,7 @@ contract QuickswapSyrupPools {
         }
         else {
             return
-                uint256(staking.rewardPerTokenStored).add(
+                staking.rewardPerTokenStored.add(
                     lastTimeRewardApplicable(_rewardToken).sub(staking.lastUpdateTime).mul(staking.rewardRate).mul(1e18).div(staking.totalSupply)
                 );
         }
@@ -122,7 +93,7 @@ contract QuickswapSyrupPools {
     function earned(address _rewardToken, address _account) public view returns (uint256) {
         Staking storage staking = s.staking[_rewardToken];
         Staker storage staker = staking.stakers[_account];
-        return uint256(staker.balance).mul(rewardPerToken(_rewardToken).sub(staker.userRewardPerTokenPaid)).div(1e18).add(staker.reward);        
+        return staker.balance.mul(rewardPerToken(_rewardToken).sub(staker.userRewardPerTokenPaid)).div(1e18).add(staker.reward);        
     }
 
     struct StakePool {
@@ -180,6 +151,37 @@ contract QuickswapSyrupPools {
             stakerPools_[i] = stakerPool(s.stakerRewardTokens[_staker][i], _staker);
         }
     }
+
+    // write functions /////////////////////////////////////////////////////////////
+
+    function enterDragonLair(uint256 _quickAmount) external {
+        SafeERC20.safeTransferFrom(QUICK, msg.sender, address(this), _quickAmount);
+        uint256 dQuick = DRAGON_LAIR.QUICKForDQUICK(_quickAmount);
+        DRAGON_LAIR.enter(_quickAmount);
+        SafeERC20.safeTransferFrom(address(DRAGON_LAIR), address(this), msg.sender, dQuick);
+    }
+
+
+    struct QuickStakeInput {
+        address rewardToken;
+        uint256 quickAmount;
+    }
+
+    // I need to test this function
+    function enterDragonLairAndStake(QuickStakeInput[] calldata _quickStakeInput) external {        
+        StakeInput[] memory stakeInput = new StakeInput[](_quickStakeInput.length);
+        uint256 totalQuick;
+        for(uint i; i < _quickStakeInput.length; i++) {
+            totalQuick += _quickStakeInput[i].quickAmount;
+            stakeInput[i] = StakeInput({
+                rewardToken: _quickStakeInput[i].rewardToken,
+                amount: DRAGON_LAIR.QUICKForDQUICK(_quickStakeInput[i].quickAmount)
+            });
+        }
+        SafeERC20.safeTransferFrom(QUICK, msg.sender, address(this), totalQuick);
+        DRAGON_LAIR.enter(totalQuick);
+        _stake(stakeInput, msg.sender);
+    }
     
     struct StakeInput {
         address rewardToken;
@@ -213,7 +215,7 @@ contract QuickswapSyrupPools {
         SafeERC20.safeTransferFrom(address(DRAGON_LAIR), msg.sender, address(this), totalStaked);
     }   
 
-    function removeStakerStakingPools(address _rewardToken) internal {
+    function removeStakerStakingPool(address _rewardToken) internal {
         uint256 lastIndex =  s.stakerRewardTokens[msg.sender].length - 1;
         uint256 index = s.stakerRewardTokenIndex[msg.sender][_rewardToken];
         if(index == 0) {
@@ -229,10 +231,11 @@ contract QuickswapSyrupPools {
     }
 
     function removeStakingPools(address[] calldata _rewardTokens) external onlyOwner {
+        uint256 lastIndex = s.rewardTokens.length;
         for(uint256 i; i < _rewardTokens.length; i++) {
-            address rewardToken = _rewardTokens[i];
-            uint256 lastIndex = s.rewardTokens.length - 1;
+            address rewardToken = _rewardTokens[i];            
             uint256 index = s.staking[rewardToken].index;
+            lastIndex--;
             if(index == 0) {
                 require(s.rewardTokens[0] == rewardToken, "rewardToken not found");
             }
@@ -242,7 +245,7 @@ contract QuickswapSyrupPools {
                 s.staking[lastRewardToken].index = uint32(index);
             }
             s.rewardTokens.pop();
-            delete s.staking[rewardToken];
+            delete s.staking[rewardToken].index;
         }
     }
 
@@ -255,7 +258,7 @@ contract QuickswapSyrupPools {
         uint256 balance = staker.balance - _amount;
         staker.balance = balance;
         if(balance == 0 && staker.reward == 0) {
-            removeStakerStakingPools(_rewardToken);
+            removeStakerStakingPool(_rewardToken);
         }
         emit Withdrawn(_rewardToken, msg.sender, _amount);        
     }
@@ -291,23 +294,38 @@ contract QuickswapSyrupPools {
                 SafeERC20.safeTransfer(rewardToken, msg.sender, reward);                
                 emit RewardPaid(rewardToken, msg.sender, reward);
                 if(staker.balance == 0) {
-                    removeStakerStakingPools(rewardToken);
+                    removeStakerStakingPool(rewardToken);
                 }
             }
-        }
-        
+        }        
     }
 
+    function payQuickFromDQuick(uint256 _amount) internal {
+        if(_amount > 0) {
+            uint256 quickAmount = DRAGON_LAIR.dQUICKForQUICK(_amount);
+            DRAGON_LAIR.leave(_amount);
+            SafeERC20.safeTransfer(QUICK, msg.sender, quickAmount);
+        }        
+    }
 
-    function exitPool(address _rewardToken, address _staker) internal returns (uint256 withdrawAmount_) {
+    function payDQuick(uint256 _amount) internal {
+        if(_amount > 0) {
+            SafeERC20.safeTransfer(address(DRAGON_LAIR), msg.sender, _amount);
+        }
+    }
+
+    function exitPool(address _rewardToken, address _staker, uint256 _amount) internal {
         updateReward(_rewardToken, _staker);
         Staking storage staking = s.staking[_rewardToken];
         Staker storage staker = staking.stakers[_staker];
-        withdrawAmount_ = staker.balance;
-        if(withdrawAmount_ > 0) {                    
-            staking.totalSupply -= withdrawAmount_;
-            staker.balance = 0;            
-            emit Withdrawn(_rewardToken, _staker, withdrawAmount_);
+        if(_amount > 0) {     
+            uint256 stakerBalance = staker.balance;
+            require(_amount <= stakerBalance, "Amount to withdraw is greater than balance");
+            staking.totalSupply -= _amount;
+            unchecked {                
+                staker.balance = stakerBalance - _amount;
+            }            
+            emit Withdrawn(_rewardToken, _staker, _amount);
         }
         uint256 reward = staker.reward;
         if (reward > 0) {
@@ -317,69 +335,69 @@ contract QuickswapSyrupPools {
         }                            
     }
 
-
-
-    function exitPools(address[] calldata _rewardTokens) external {
-        uint256 totalWithdrawAmount;
-        for(uint256 i; i < _rewardTokens.length; i++) {
-            totalWithdrawAmount += exitPool(_rewardTokens[i], msg.sender);
-            removeStakerStakingPools(_rewardTokens[i]);
-        }
-        if(totalWithdrawAmount > 0) {
-            SafeERC20.safeTransfer(address(DRAGON_LAIR), msg.sender, totalWithdrawAmount);
-        }
+    function _exitPools(StakeInput[] calldata _stakes) internal returns (uint256 totalWithdrawAmount_) {
+        for(uint256 i; i < _stakes.length; i++) {
+            StakeInput calldata stakeInput = _stakes[i];
+            totalWithdrawAmount_ += stakeInput.amount;
+            exitPool(stakeInput.rewardToken, msg.sender, stakeInput.amount);
+        }        
     }
 
-    function exitPoolsAndDragonLair(address[] calldata _rewardTokens) external {
-        uint256 totalWithdrawAmount;
-        for(uint256 i; i < _rewardTokens.length; i++) {
-            totalWithdrawAmount += exitPool(_rewardTokens[i], msg.sender);
-            removeStakerStakingPools(_rewardTokens[i]);
-        }
-        if(totalWithdrawAmount > 0) {
-            uint256 quickAmount = DRAGON_LAIR.dQUICKForQUICK(totalWithdrawAmount);
-            DRAGON_LAIR.leave(totalWithdrawAmount);
-            SafeERC20.safeTransfer(QUICK, msg.sender, quickAmount);
-        }
+    function exitPools(StakeInput[] calldata _stakes) external {
+        uint256 totalWithdrawAmount = _exitPools(_stakes);
+        payDQuick(totalWithdrawAmount);
     }
 
-    function exitAllPools() external {
-        address[] storage rewardTokens = s.stakerRewardTokens[msg.sender];        
-        uint256 totalWithdrawAmount;
+    function exitPoolsAndDragonLair(StakeInput[] calldata _stakes) external {
+        uint256 totalWithdrawAmount = _exitPools(_stakes);
+        payQuickFromDQuick(totalWithdrawAmount);
+    }
+
+    function _exitAllFromPools(address[] calldata _rewardTokens) internal returns (uint256 totalWithdrawAmount_) {
+        for(uint256 i; i < _rewardTokens.length; i++) {
+            address rewardToken = _rewardTokens[i];
+            uint256 amount = s.staking[rewardToken].stakers[msg.sender].balance;
+            totalWithdrawAmount_ += amount;
+            exitPool(rewardToken, msg.sender, amount);
+            removeStakerStakingPool(rewardToken);
+        }
+
+    }
+
+    function exitAllFromPools(address[] calldata _rewardTokens) external {
+        uint256 totalWithdrawAmount = _exitAllFromPools(_rewardTokens);
+        payDQuick(totalWithdrawAmount);        
+    }
+
+    function exitAllFromPoolsAndDragonLair(address[] calldata _rewardTokens) external {
+        uint256 totalWithdrawAmount = _exitAllFromPools(_rewardTokens);        
+        payQuickFromDQuick(totalWithdrawAmount);
+    }
+
+    function _exitAllFromAllPools() internal returns (uint256 totalWithdrawAmount_) {
+        address[] storage rewardTokens = s.stakerRewardTokens[msg.sender];                
         for(uint256 i = rewardTokens.length - 1;; i--) {
             address rewardToken = rewardTokens[i];
-            totalWithdrawAmount += exitPool(rewardToken, msg.sender);
+            uint256 amount = s.staking[rewardToken].stakers[msg.sender].balance;
+            totalWithdrawAmount_ += amount;
+            exitPool(rewardToken, msg.sender, amount);
             rewardTokens.pop();
             delete s.stakerRewardTokenIndex[msg.sender][rewardToken];
             if(i == 0) {
                 break;
             }
-        }      
-        if(totalWithdrawAmount > 0) {
-            SafeERC20.safeTransfer(address(DRAGON_LAIR), msg.sender, totalWithdrawAmount);
         }
     }
 
-    function exitAllPoolsAndDragonLair() external {
-        address[] storage rewardTokens = s.stakerRewardTokens[msg.sender];        
-        uint256 totalWithdrawAmount;
-        for(uint256 i = rewardTokens.length - 1;; i--) {
-            address rewardToken = rewardTokens[i];
-            totalWithdrawAmount += exitPool(rewardToken, msg.sender);
-            rewardTokens.pop();
-            delete s.stakerRewardTokenIndex[msg.sender][rewardToken];
-            if(i == 0) {
-                break;
-            }
-        }      
-        if(totalWithdrawAmount > 0) {
-            uint256 quickAmount = DRAGON_LAIR.dQUICKForQUICK(totalWithdrawAmount);
-            DRAGON_LAIR.leave(totalWithdrawAmount);
-            SafeERC20.safeTransfer(QUICK, msg.sender, quickAmount);
-        }
+    function exitAllFromAllPools() external {
+        uint256 totalWithdrawAmount = _exitAllFromAllPools();
+        payDQuick(totalWithdrawAmount);
     }
 
-
+    function exitAllFromAllPoolsAndDragonLair() external {
+        uint256 totalWithdrawAmount = _exitAllFromAllPools();              
+        payQuickFromDQuick(totalWithdrawAmount);
+    }
 
     function updateReward(address _rewardToken, address _account) internal {
         Staking storage staking = s.staking[_rewardToken];
