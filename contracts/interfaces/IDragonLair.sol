@@ -9,4 +9,8 @@ interface IDragonLair {
 
     //returns how much QUICK someone gets for returning dQUICK
     function dQUICKForQUICK(uint256 _dQuickAmount) external view returns (uint256 quickAmount_);
+
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address account) external view returns (uint256);
 }
