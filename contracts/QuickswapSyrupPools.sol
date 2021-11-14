@@ -35,8 +35,6 @@ struct AppStorage {
     mapping(address => mapping(address => uint256)) stakerRewardTokenIndex;
 }
 
-// UniswapV2Router02 constructor args:  constructor(address _factory, address _WETH)
-// is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32, 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270) 
 contract QuickswapSyrupPools {
     AppStorage s;
 
@@ -61,6 +59,22 @@ contract QuickswapSyrupPools {
     function balanceOf(address _rewardToken, address _account) external view returns (uint256) {
         return s.staking[_rewardToken].stakers[_account].balance;
     }
+
+    function balanceOf(address _account) public view returns (uint256) {
+        uint256 length = s.stakerRewardTokens[_account].length;
+        uint256 totalDQuick;
+        for(uint256 i; i < length; i++) {
+            address rewardToken = s.stakerRewardTokens[_account][i];
+            totalDQuick += s.staking[rewardToken].stakers[_account].balance;
+        }
+        return totalDQuick;
+    }
+
+    function quickBalanceOf(address _account) public view returns (uint256) {
+        uint256 totalDQuick = balanceOf(_account);
+        return DRAGON_LAIR.dQUICKForQUICK(totalDQuick);
+    }
+
 
     function min(uint256 a, uint256 b) internal pure returns (uint256) {
         return a < b ? a : b;
@@ -145,7 +159,7 @@ contract QuickswapSyrupPools {
         }
     }
 
-    // write functions //////////////////////////////////////////////
+    // payment functions //////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////// 
     ///////////////////////////////////////////////////////////////// 
 
