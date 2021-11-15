@@ -377,10 +377,12 @@ contract QuickswapSyrupPools {
         }        
     }
 
-    function getAllRewards() external {
-        uint256 length = s.stakerRewardTokens[msg.sender].length;
-        for(uint256 i; i < length; i++) {
+    function getAllRewards() external {        
+        for(uint256 i = s.stakerRewardTokens[msg.sender].length - 1;; i--) {        
             _getRewards(s.stakerRewardTokens[msg.sender][i]);
+            if(i == 0) {
+                break;
+            }
         }
     }
 
