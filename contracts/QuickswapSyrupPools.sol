@@ -52,6 +52,15 @@ contract QuickswapSyrupPools {
     ///////////////////////////////////////////////////////////////// 
     ///////////////////////////////////////////////////////////////// 
 
+    function totalSupply() external view returns (uint256) {
+        uint256 length = s.rewardTokens.length;        
+        uint256 total;
+        for(uint256 i; i < length; i++) {
+            total += s.staking[s.rewardTokens[i]].totalSupply;
+        }
+        return total;
+    }
+    
     function totalSupply(address _rewardToken) external view returns (uint256) {
         return s.staking[_rewardToken].totalSupply;
     }  
