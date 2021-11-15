@@ -352,26 +352,36 @@ contract QuickswapSyrupPools {
         payQuickFromDQuick(totalWithdrawAmount);
     }
 
-    // getRewards function //////////////////////////////////////////
+    // getRewards functions //////////////////////////////////////////
     // Gets any rewards but does not unstake dQuick
     /////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////
 
+    function _getRewards(address rewardToken) internal {
+        updateReward(rewardToken, msg.sender);
+        Staker storage staker = s.staking[rewardToken].stakers[msg.sender];
+        uint256 reward = staker.reward;
+        if (reward > 0) {
+            staker.reward = 0;
+            SafeERC20.safeTransfer(rewardToken, msg.sender, reward);                
+            emit RewardPaid(rewardToken, msg.sender, reward);
+            if(staker.balance == 0) {
+                removeStakerStakingPool(rewardToken);
+            }
+        }
+    }
+
     function getRewards(address[] calldata _rewardTokens) external {
         for(uint256 i; i < _rewardTokens.length; i++) {
-            address rewardToken = _rewardTokens[i];
-            updateReward(rewardToken, msg.sender);
-            Staker storage staker = s.staking[rewardToken].stakers[msg.sender];
-            uint256 reward = staker.reward;
-            if (reward > 0) {
-                staker.reward = 0;
-                SafeERC20.safeTransfer(rewardToken, msg.sender, reward);                
-                emit RewardPaid(rewardToken, msg.sender, reward);
-                if(staker.balance == 0) {
-                    removeStakerStakingPool(rewardToken);
-                }
-            }
+            _getRewards(_rewardTokens[i]);            
         }        
+    }
+
+    function getAllRewards() external {
+        uint256 length = s.stakerRewardTokens[msg.sender].length;
+        for(uint256 i; i < length; i++) {
+            _getRewards(s.stakerRewardTokens[msg.sender][i]);
+        }
     }
 
     // exit functions /////////////////////////////////////////////// 

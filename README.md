@@ -66,9 +66,9 @@ struct StakeInput {
 function withdraw(StakeInput[] calldata _stakes) external;
 ```
 
-The `withdraw(StakeInput[] calldata _stakes)` function enables a user to remove their dQUICK from one or more Syrup Pools in a single transaction.
+The `withdraw(StakeInput[] calldata _stakes)` function enables a user to remove a specified amount of dQUICK from one or more Syrup Pools in a single transaction.
 
-Note that this is new functionality because it enables a user to specify the amount of dQUICK to remove from each Syrup Pool. The old `StakingRewards` contract only allowed a user to withdraw all dQUICK from a Syrup Pool and could only do so for one Syrup Pool per transaction.
+Note that this is new functionality because it enables a user to specify the amount of dQUICK to remove from each Syrup Pool. The old `StakingRewards` contract only allowed a user to withdraw *all* dQUICK from a Syrup Pool and could only do so for one Syrup Pool per transaction.
 
 ---
 #### withdrawAndDragonLair(StakeInput[] calldata _stakes)
@@ -85,7 +85,31 @@ struct StakeInput {
 function withdrawAndDragonLair(StakeInput[] calldata _stakes) external;
 ```
 
-The `withdrawAndDragonLair(StakeInput[] calldata _stakes)` function enables a user to remove their dQUICK from one or more Syrup Pools and automatically converts it to QUICK and transfers it to the user, all in a single transaction.
+The `withdrawAndDragonLair(StakeInput[] calldata _stakes)` function enables a user to remove a specified amount of dQUICK from one or more Syrup Pools and automatically converts it to QUICK and transfers it to the user, all in a single transaction.
+
+---
+#### withdrawAll(address[] calldata _rewardTokens)
+
+The `withdrawAll(address[] calldata _rewardTokens)` function enables a user to remove all their staked dQUICK from one or more Syrup Pools.
+
+---
+
+#### withdrawAllAndDragonLair(address[] calldata _rewardTokens)
+
+The `withdrawAllAndDragonLair(address[] calldata _rewardTokens)` function enables a user to remove all their dQUICK from one or more Syrup Pools and automatically converts it to QUICK and transfers it to the user, all in a single transaction.
+
+---
+#### withdrawAllFromAll()
+
+The `withdrawAllFromAll()` function enables a user to remove all their staked dQUICK from all Syrup Pools in a single transaction.
+
+---
+
+
+
+
+
+
 
 
 
