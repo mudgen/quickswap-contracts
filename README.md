@@ -211,7 +211,7 @@ The `exitAllFromAllAndDragonLair()` function enables a user to unstake all her s
 
 ### Adding Syrup Pools
 
-#### notifyRewardAmount(RewardInfo[] calldata _rewards)
+#### notifyRewardAmount(RewardInfo[] calldata _rewards) external onlyOwner
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -226,6 +226,20 @@ function notifyRewardAmount(RewardInfo[] calldata _rewards) external onlyOwner {
 ```
 
 The `notifyRewardAmount(RewardInfo[] calldata _rewards)` function is used to add Syrup Pools or extend or restart Syrup Pools.
+
+### Removing Syrup Pools
+
+#### removeStakingPools(address[] calldata _rewardTokens) external onlyOwner
+
+This function is used to remove Syrup Pools from the internal array of Syrup Pools.
+
+Removing Syrup Pools affects the return results of these functions:
+* totalSupply()
+* pools()
+
+dQUICK cannot be staked into a Syrup Pool that has been removed.
+
+Note that stakers can still withdraw, exit and claim from Syrup Pools that have been removed.
 
 
 
