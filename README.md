@@ -10,6 +10,39 @@ After `QuickswapSyrupPools.sol` is deployed any number of Syrup Pools can be add
 
 This change of architecture enables easier on-chain management and tracking of all Syrup Pools and enables an action to occur on multiple Syrup Pools in a single transaction. For example it enables a person to stake their dQUICK into multiple Syrup Pools in a single transaction.
 
+### New Functionality
+
+The `QuickswapSyrupPools.sol` contract offers various new functionality that can see in the descriptions of functions below.
+
+New staking and unstaking functionality:
+
+1. A user can stake dQUICK into multiple Syrup Pools in a single transaction.
+2. A user can convert QUICK to dQUICK and stake it into multiple Syrup Pools in a single transaction.
+3. A user can withdraw specific amounts of dQUICK from multiple Syrup Pools in a single transaction.
+4. A user can withdraw specific amounts dQUICK from multiple Syrup Pools and convert it to QUICK in a single transaction.
+5. A user can withdraw all her dQUICK from all Syrup Pools she has staked in, in a single transaction.
+6. A user can withdraw all her dQUICK from all Syrup Pools she has staked in, and automatically convert it into QUICK in a single transaction.
+7. A user can claim rewards (getRewards) from multiple Syrup Pools in a single transaction.
+8. A user can claim rewards (getRewards) from all Syrup Pools she has rewards in,  in a single transaction.
+9. A user can withdraw specific amounts of dQUICK from multiple Syrup Pools and claim rewards from those Syrup Pools in a single transaction.
+10. A user can withdraw specific amounts dQUICK from multiple Syrup Pools and convert it to QUICK and claim rewards from those Syrup Pools in a single transaction.
+11. A user can withdraw all her dQUICK from all Syrup Pools she has staked in and claim rewards from those Syrup Pools, in a single transaction.
+12. A user can withdraw all her dQUICK from all Syrup Pools she has staked in and claim rewards from those Syrup Pools , and automatically convert the dQUICK into QUICK in a single transaction.
+
+New read-only, on-chain functionality:
+1. The `totalSupply()` function returns the total staked dQUICK across all Syrup Pools.
+2. The `totalSupply(address _rewardToken)` function returns the total dQUICK staked in a specific Syrup Pool.
+3. The `balanceOf(address _rewardToken, address _account)` function returns the total dQUICK staked in a specific Syrup Pool by a specific staker.
+4. The `balanceOf(address _account)` function returns the total dQUICK staked in all Syrup Pools by a specific staker.
+5. The `pool(address _rewardToken)` function returns information about a specific Syrup Pool.
+6. The `pools()` function returns information about all Syrup Pools.
+7. The `stakerPool(address _rewardToken, address _staker)` function returns staker information about a specific Syrup Pool and specific staker, including how much dQUICK the staker staked and how many reward tokens are available for claiming.
+8. The `stakerPools(address _staker)` function returns staker information about all Syrup Pools that the staker has dQUICK staked in or has rewards available in.
+
+Adding new Syrup Pools
+
+1. The `notifyRewardAmount(RewardInfo[] calldata _rewards) external onlyOwner` function enables the owner of the contract to add new Syrup Pools.
+
 ### Staking
 #### stake function
 
@@ -67,8 +100,6 @@ function withdraw(StakeInput[] calldata _stakes) external;
 ```
 
 The `withdraw(StakeInput[] calldata _stakes)` function enables a user to remove a specified amount of dQUICK from one or more Syrup Pools in a single transaction.
-
-Note that this is new functionality because it enables a user to specify the amount of dQUICK to remove from each Syrup Pool. The old `StakingRewards` contract only allowed a user to withdraw *all* dQUICK from a Syrup Pool and could only do so for one Syrup Pool per transaction.
 
 ---
 #### withdrawAndDragonLair(StakeInput[] calldata _stakes)
