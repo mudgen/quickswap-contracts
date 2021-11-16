@@ -227,6 +227,8 @@ function notifyRewardAmount(RewardInfo[] calldata _rewards) external onlyOwner {
 
 The `notifyRewardAmount(RewardInfo[] calldata _rewards)` function is used to add Syrup Pools or extend or restart Syrup Pools.
 
+---
+
 ### Removing Syrup Pools
 
 #### removeStakingPools(address[] calldata _rewardTokens) external onlyOwner
@@ -240,6 +242,79 @@ Removing Syrup Pools affects the return results of these functions:
 dQUICK cannot be staked into a Syrup Pool that has been removed.
 
 Note that stakers can still withdraw, exit and claim from Syrup Pools that have been removed.
+
+---
+### Read Only Functions
+
+#### totalSupply()
+
+This returns the total amount of dQUICK that has been staked in all Syrup Pools.
+
+---
+####  totalSupply(address _rewardToken)
+
+This returns the total amount of dQUICK that has been staked in a specific Syrup Pool.
+
+#### balanceOf(address _rewardToken, address _account)
+
+This returns the total amount of dQUICK staked in a specific Syrup Pool by a specific staker.
+
+#### balanceOf(address _account)
+
+This returns the total amount dQUICK staked in all Syrup Pools by a specific staker.
+
+#### quickBalanceOf(address _account)
+
+This returns the total amount dQUICK staked in all Syrup Pools by a specific staker and converts that to a QUICK amount.
+
+This function is useful for voting apps like Snapshot when QUICK is used for voting.
+
+#### rewardPerToken(address _rewardToken)
+
+Returns the reward amount per dQUICK. This value increases until the reward period ends.
+
+This function is used internally by other functions to determine reward payouts.
+
+#### earned(address _rewardToken, address _account)
+
+Returns the amount of reward tokens that can currently be claimed by a specific staker for a specific Syrup Pool.
+
+#### pool(address _rewardToken) public view returns (StakePool memory stakePool_)
+
+Provides information about a specific Syrup Pool:
+
+```Solidity
+//SPDX-License-Identifier: MIT
+pragma solidity =0.8.9;
+
+struct StakePool {
+    address rewardToken; // address of reward token
+    uint256 periodFinish; // when rewards will end
+    uint256 totalSupply;  // how much dQUICK is staked
+    uint256 rewardRate;   // rewards paid per second
+    uint256 rewardPerToken; // How much is earned for each dQUICK.  This increases over time.
+}
+```
+
+#### pools() external view returns (StakePool[] memory stakePools_)
+
+Provides information about a specific Syrup Pool:
+
+```Solidity
+//SPDX-License-Identifier: MIT
+pragma solidity =0.8.9;
+
+struct StakePool {
+    address rewardToken; // address of reward token
+    uint256 periodFinish; // when rewards will end
+    uint256 totalSupply;  // how much dQUICK is staked
+    uint256 rewardRate;   // rewards paid per second
+    uint256 rewardPerToken; // How much is earned for each dQUICK.  This increases over time.
+}
+```
+
+Returns information about all Syrup Pools.
+
 
 
 
