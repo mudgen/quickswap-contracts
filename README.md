@@ -197,7 +197,7 @@ The `exitAllAndDragonLair(address[] calldata _rewardTokens)` function enables a 
 
 ---
 
-#### exitAll(address[] calldata _rewardTokens)
+#### exitAllFromAll()
 
 The `exitAllFromAll()` function enables a user to unstake all her staked dQUICK for all Syrup Pools she has dQUICK staked in and claim reward tokens from those Syrup Pools. 
 
