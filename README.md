@@ -83,7 +83,7 @@ This function requires that a user approves the `QuickswapSyrupPools` contract t
 ### Withdrawing
 
 Note that withdrawing returns dQUICK back to its owner but does not claim any rewards.
-#### withdraw(StakeInput[] calldata _stakes)
+#### `withdraw(StakeInput[] calldata _stakes)`
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -99,7 +99,7 @@ function withdraw(StakeInput[] calldata _stakes) external;
 The `withdraw(StakeInput[] calldata _stakes)` function enables a user to remove a specified amount of dQUICK from one or more Syrup Pools in a single transaction.
 
 ---
-#### withdrawAndDragonLair(StakeInput[] calldata _stakes)
+#### `withdrawAndDragonLair(StakeInput[] calldata _stakes)`
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -115,29 +115,29 @@ function withdrawAndDragonLair(StakeInput[] calldata _stakes) external;
 The `withdrawAndDragonLair(StakeInput[] calldata _stakes)` function enables a user to remove a specified amount of dQUICK from one or more Syrup Pools and automatically converts it to QUICK and transfers it to the user, all in a single transaction.
 
 ---
-#### withdrawAll(address[] calldata _rewardTokens)
+#### `withdrawAll(address[] calldata _rewardTokens)`
 
 The `withdrawAll(address[] calldata _rewardTokens)` function enables a user to remove all their staked dQUICK from one or more Syrup Pools.
 
 ---
 
-#### withdrawAllAndDragonLair(address[] calldata _rewardTokens)
+#### `withdrawAllAndDragonLair(address[] calldata _rewardTokens)`
 
 The `withdrawAllAndDragonLair(address[] calldata _rewardTokens)` function enables a user to remove all their dQUICK from one or more Syrup Pools and automatically converts it to QUICK and transfers it to the user, all in a single transaction.
 
 ---
-#### withdrawAllFromAll()
+#### `withdrawAllFromAll()`
 
 The `withdrawAllFromAll()` function enables a user to remove all their staked dQUICK from all Syrup Pools in a single transaction.
 
 ---
 ### Claiming Rewards
-#### getRewards(address[] calldata _rewardTokens)
+#### `getRewards(address[] calldata _rewardTokens)`
 
 The `getRewards(address[] calldata _rewardTokens)` function enables a user to claim reward tokens from one or more Syrup Pools in a single transaction. 
 
 ---
-#### getAllRewards()
+#### `getAllRewards()`
 
 The `getAllRewards()` function enables a user to claim reward tokens from all the Syrup Pools the user has rewards in, in a single transaction.
 
@@ -145,7 +145,7 @@ The `getAllRewards()` function enables a user to claim reward tokens from all th
 ### Exit functions
 Note: These functions enable a user to remove staked dQUICK and claim reward tokens from one or more Syrup Pools in a single transaction.
 
-#### exit(StakeInput[] calldata _stakes)
+#### `exit(StakeInput[] calldata _stakes)`
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -162,7 +162,7 @@ The `exit(StakeInput[] calldata _stakes)` function enables a user to unstake a s
 
 ---
 
-#### exitAndDragonLair(StakeInput[] calldata _stakes)
+#### `exitAndDragonLair(StakeInput[] calldata _stakes)`
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -179,25 +179,25 @@ The `exit(StakeInput[] calldata _stakes)` function enables a user to unstake a s
 
 ---
 
-#### exitAll(address[] calldata _rewardTokens)
+#### `exitAll(address[] calldata _rewardTokens)`
 
 The `exitAll(address[] calldata _rewardTokens)` function enables a user to unstake all his staked dQUICK for each specified Syrup Pool and claim reward tokens from those Syrup Pools. 
 
 ---
 
-#### exitAllAndDragonLair(address[] calldata _rewardTokens)
+#### `exitAllAndDragonLair(address[] calldata _rewardTokens)`
 
 The `exitAllAndDragonLair(address[] calldata _rewardTokens)` function enables a user to unstake all his staked dQUICK for each specified Syrup Pool and claim reward tokens from those Syrup Pools. The unstaked dQUICK is automatically converted to QUICK and transferred to the user. This is all done in a single transaction.
 
 ---
 
-#### exitAllFromAll()
+#### `exitAllFromAll()`
 
 The `exitAllFromAll()` function enables a user to unstake all her staked dQUICK for all Syrup Pools she has dQUICK staked in and claim reward tokens from those Syrup Pools. 
 
 ---
 
-#### exitAllFromAllAndDragonLair()
+#### `exitAllFromAllAndDragonLair()`
 
 The `exitAllFromAllAndDragonLair()` function enables a user to unstake all her staked dQUICK for all Syrup Pools she has dQUICK staked in and claim reward tokens from those Syrup Pools. The unstaked dQUICK is automatically converted to QUICK and transferred to the user. This is all done in a single transaction.
 
@@ -205,7 +205,7 @@ The `exitAllFromAllAndDragonLair()` function enables a user to unstake all her s
 
 ### Adding Syrup Pools
 
-#### notifyRewardAmount(RewardInfo[] calldata _rewards) external onlyOwner
+#### `notifyRewardAmount(RewardInfo[] calldata _rewards) external onlyOwner`
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -225,7 +225,7 @@ The `notifyRewardAmount(RewardInfo[] calldata _rewards)` function is used to add
 
 ### Removing Syrup Pools
 
-#### removeStakingPools(address[] calldata _rewardTokens) external onlyOwner
+#### `removeStakingPools(address[] calldata _rewardTokens) external onlyOwner`
 
 This function is used to remove Syrup Pools from the internal array of Syrup Pools.
 
@@ -240,40 +240,40 @@ Note that stakers can still withdraw, exit and claim from Syrup Pools that have 
 ---
 ### Read Only Functions
 
-#### totalSupply()
+#### `totalSupply()`
 
 This returns the total amount of dQUICK that has been staked in all Syrup Pools.
 
 ---
-####  totalSupply(address _rewardToken)
+####  `totalSupply(address _rewardToken)`
 
 This returns the total amount of dQUICK that has been staked in a specific Syrup Pool.
 
-#### balanceOf(address _rewardToken, address _account)
+#### `balanceOf(address _rewardToken, address _account)`
 
 This returns the total amount of dQUICK staked in a specific Syrup Pool by a specific staker.
 
-#### balanceOf(address _account)
+#### `balanceOf(address _account)`
 
 This returns the total amount dQUICK staked in all Syrup Pools by a specific staker.
 
-#### quickBalanceOf(address _account)
+#### `quickBalanceOf(address _account)`
 
 This returns the total amount dQUICK staked in all Syrup Pools by a specific staker and converts that to a QUICK amount.
 
 This function is useful for voting apps like Snapshot when QUICK is used for voting.
 
-#### rewardPerToken(address _rewardToken)
+#### `rewardPerToken(address _rewardToken)`
 
 Returns the reward amount per dQUICK. This value increases until the reward period ends.
 
 This function is used internally by other functions to determine reward payouts.
 
-#### earned(address _rewardToken, address _account)
+#### `earned(address _rewardToken, address _account)`
 
 Returns the amount of reward tokens that can currently be claimed by a specific staker for a specific Syrup Pool.
 
-#### pool(address _rewardToken) public view returns (StakePool memory stakePool_)
+#### `pool(address _rewardToken) public view returns (StakePool memory stakePool_)`
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -289,7 +289,7 @@ function pool(address _rewardToken) public view returns (StakePool memory stakeP
 ```
 Provides information about a specific Syrup Pool.
 
-#### pools() external view returns (StakePool[] memory stakePools_)
+#### `pools() external view returns (StakePool[] memory stakePools_)`
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -307,7 +307,7 @@ function pools() external view returns (StakePool[] memory stakePools_)
 Returns information about all Syrup Pools.
 
 ---
-#### stakerPool(address _rewardToken, address _staker) public view returns (StakerPool memory stakerPool_)
+#### `stakerPool(address _rewardToken, address _staker) public view returns (StakerPool memory stakerPool_)`
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
