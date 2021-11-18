@@ -45,7 +45,6 @@ Adding new Syrup Pools
 
 ### Staking
 #### stake function
-
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -64,7 +63,6 @@ This function requires that a user approves the `QuickswapSyrupPools` contract t
 
 ---
 #### enterDragonLairAndStake function
-
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -86,7 +84,6 @@ This function requires that a user approves the `QuickswapSyrupPools` contract t
 
 Note that withdrawing returns dQUICK back to its owner but does not claim any rewards.
 #### withdraw(StakeInput[] calldata _stakes)
-
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -103,7 +100,6 @@ The `withdraw(StakeInput[] calldata _stakes)` function enables a user to remove 
 
 ---
 #### withdrawAndDragonLair(StakeInput[] calldata _stakes)
-
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -150,7 +146,6 @@ The `getAllRewards()` function enables a user to claim reward tokens from all th
 Note: These functions enable a user to remove staked dQUICK and claim reward tokens from one or more Syrup Pools in a single transaction.
 
 #### exit(StakeInput[] calldata _stakes)
-
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -168,7 +163,6 @@ The `exit(StakeInput[] calldata _stakes)` function enables a user to unstake a s
 ---
 
 #### exitAndDragonLair(StakeInput[] calldata _stakes)
-
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -280,9 +274,6 @@ This function is used internally by other functions to determine reward payouts.
 Returns the amount of reward tokens that can currently be claimed by a specific staker for a specific Syrup Pool.
 
 #### pool(address _rewardToken) public view returns (StakePool memory stakePool_)
-
-Provides information about a specific Syrup Pool:
-
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -294,12 +285,11 @@ struct StakePool {
     uint256 rewardRate;   // rewards paid per second
     uint256 rewardPerToken; // How much is earned for each dQUICK.  This increases over time.
 }
+function pool(address _rewardToken) public view returns (StakePool memory stakePool_);
 ```
+Provides information about a specific Syrup Pool.
 
 #### pools() external view returns (StakePool[] memory stakePools_)
-
-Provides information about a specific Syrup Pool:
-
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -311,9 +301,46 @@ struct StakePool {
     uint256 rewardRate;   // rewards paid per second
     uint256 rewardPerToken; // How much is earned for each dQUICK.  This increases over time.
 }
+
+function pools() external view returns (StakePool[] memory stakePools_)
+```
+Returns information about all Syrup Pools.
+
+---
+#### stakerPool(address _rewardToken, address _staker) public view returns (StakerPool memory stakerPool_)
+```Solidity
+//SPDX-License-Identifier: MIT
+pragma solidity =0.8.9;
+
+struct StakerPool {
+    address rewardToken; // address of reward token
+    address staker; // address of the staker
+    uint256 periodFinish; // when rewards will end
+    uint256 balance; // the amount of dQUICK the staker has staked for the Syrup Pool
+    uint256 earned; // how much reward token is available for claiming
+}
+
+function stakerPool(address _rewardToken, address _staker) public view returns (StakerPool memory stakerPool_)
+```
+Returns staking information about a specific Syrup Pool for a specific staker.
+
+#### stakerPools(address _staker) external view returns (StakerPool[] memory stakerPools_)
+```Solidity
+//SPDX-License-Identifier: MIT
+pragma solidity =0.8.9;
+
+struct StakerPool {
+    address rewardToken; // address of reward token
+    address staker; // address of the staker
+    uint256 periodFinish; // when rewards will end
+    uint256 balance; // the amount of dQUICK the staker has staked for the Syrup Pool
+    uint256 earned; // how much reward token is available for claiming
+}
+
+function stakerPools(address _staker) external view returns (StakerPool[] memory stakerPools_)
 ```
 
-Returns information about all Syrup Pools.
+Returns staking information for all Syrup Pools that a specific stater has dQUICK staked in or has rewards available to claim in.
 
 
 

@@ -113,11 +113,11 @@ contract QuickswapSyrupPools {
     }
 
     struct StakePool {
-        address rewardToken;
-        uint256 periodFinish;
-        uint256 totalSupply;
-        uint256 rewardRate;
-        uint256 rewardPerToken;
+        address rewardToken; // address of reward token
+        uint256 periodFinish; // when rewards will end
+        uint256 totalSupply;  // how much dQUICK is staked
+        uint256 rewardRate;   // rewards paid per second
+        uint256 rewardPerToken; // How much is earned for each dQUICK.  This increases over time.
     }
 
     function pool(address _rewardToken) public view returns (StakePool memory stakePool_) {
@@ -141,11 +141,11 @@ contract QuickswapSyrupPools {
     }
 
     struct StakerPool {
-        address rewardToken;
-        address staker;
-        uint256 periodFinish;
-        uint256 balance;
-        uint256 earned;
+        address rewardToken; // address of reward token
+        address staker; // address of the staker
+        uint256 periodFinish; // when rewards will end
+        uint256 balance; // the amount of dQUICK the staker has staked for the Syrup Pool
+        uint256 earned; // how much reward token is available for claiming
     }
 
     function stakerPool(address _rewardToken, address _staker) public view returns (StakerPool memory stakerPool_) {
