@@ -75,7 +75,7 @@ struct QuickStakeInput {
 function enterDragonLairAndStake(QuickStakeInput[] calldata _quickStakeInput)
 ```
 
-The `enterDragonLairAndStake` function enables users to stake QUICK into Syrup Pools.  It automatically converts QUICK into dQUICK and stakes it. This function saves the user the trouble of having to first convert their QUICK to dQUICK before staking.
+The `enterDragonLairAndStake` function enables users to stake QUICK into one or more Syrup Pools.  It automatically converts QUICK into dQUICK and stakes it. This function saves the user the trouble of having to first convert their QUICK to dQUICK before staking.
 
 This function requires that a user approves the `QuickswapSyrupPools` contract to transfer QUICK on their behalf. Note that it does not require the user to approve `QuickswapSyrupPools` for transferring dQUICK.
 
