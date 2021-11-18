@@ -341,7 +341,7 @@ struct StakerPool {
 function stakerPools(address _staker) external view returns (StakerPool[] memory stakerPools_)
 ```
 
-Returns staking information for all Syrup Pools that a specific stater has dQUICK staked in or has rewards available to claim in.
+Returns staking information for all Syrup Pools that a specific staker has dQUICK staked in or has rewards available to claim in.
 
 
 
