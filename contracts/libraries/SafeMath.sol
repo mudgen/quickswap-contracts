@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
 
+// I found that SafeMath function calls are easier to read than without them when a long series of math operations are used.
+
 library SafeMath {
 
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -9,7 +11,9 @@ library SafeMath {
 
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
         require(b <= a, "SafeMath: subtraction underflow");
-        return a - b;        
+        unchecked {
+            return a - b;
+        }        
     }
 
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {

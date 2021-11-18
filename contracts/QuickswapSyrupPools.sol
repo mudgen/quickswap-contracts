@@ -1,4 +1,7 @@
 //SPDX-License-Identifier: MIT
+
+// Author: Nick Mudge (@mudgen, nick@perfectabstractions, https://twitter.com/mudgen)
+
 pragma solidity =0.8.9;
 
 import {IERC20} from "./interfaces/IERC20.sol";
@@ -522,6 +525,7 @@ contract QuickswapSyrupPools {
         uint256 rewardDuration;
     }
 
+    // This function is used to add Syrup Pools or extend or restart their rewards
     function notifyRewardAmount(RewardInfo[] calldata _rewards) external onlyOwner {
         for(uint256 i; i < _rewards.length; i++) {
             RewardInfo calldata reward = _rewards[i];
