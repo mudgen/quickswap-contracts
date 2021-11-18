@@ -44,7 +44,7 @@ Adding new Syrup Pools
 1. The `notifyRewardAmount(RewardInfo[] calldata _rewards) external onlyOwner` function enables the owner of the contract to add new Syrup Pools.
 
 ### Staking
-#### stake function
+#### `stake(StakeInput[] calldata _stakes)`
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
@@ -62,7 +62,7 @@ The `stake` function enables people to stake dQUICK into one or more Syrup Pools
 This function requires that a user approves the `QuickswapSyrupPools` contract to transfer dQUICK on their behalf.
 
 ---
-#### enterDragonLairAndStake function
+#### `enterDragonLairAndStake(QuickStakeInput[] calldata _quickStakeInput)`
 ```Solidity
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.9;
