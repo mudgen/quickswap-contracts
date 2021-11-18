@@ -324,6 +324,7 @@ function stakerPool(address _rewardToken, address _staker) public view returns (
 ```
 Returns staking information about a specific Syrup Pool for a specific staker.
 
+---
 #### stakerPools(address _staker) external view returns (StakerPool[] memory stakerPools_)
 ```Solidity
 //SPDX-License-Identifier: MIT
