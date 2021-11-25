@@ -291,11 +291,10 @@ contract QuickswapSyrupPools {
             staker.reward = 0;
             SafeERC20.safeTransfer(_rewardToken, msg.sender, reward);
             emit RewardPaid(_rewardToken, msg.sender, reward);
-            reward = 0;
-        }        
-        if(stakerBalance == _amount && reward == 0) {
-            removeStakerStakingPool(_rewardToken);
-        }
+            if(stakerBalance == _amount) {
+                removeStakerStakingPool(_rewardToken);
+            }
+        }                
     }
 
     function removeStakerStakingPool(address _rewardToken) internal {
