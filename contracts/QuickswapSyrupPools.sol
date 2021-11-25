@@ -272,11 +272,8 @@ contract QuickswapSyrupPools {
         Staking storage staking = s.staking[_rewardToken];
         Staker storage staker = staking.stakers[msg.sender];
         uint256 stakerBalance = staker.balance;
-        uint256 reward;
-        if(_isGetReward == true) {
-            reward = staker.reward;
-        }
-        if(_amount == 0 && reward == 0) {
+        uint256 reward = staker.reward;        
+        if(_amount == 0 && (_isGetReward == false || reward == 0)) {
             revert("Cannot withdraw 0 balance and claim 0 rewards");            
         }
         if(_amount > 0) {
@@ -287,12 +284,13 @@ contract QuickswapSyrupPools {
             }
             emit Withdrawn(_rewardToken, msg.sender, _amount);
         }        
-        if (reward > 0) {
+        if (_isGetReward == true) {
             staker.reward = 0;
             SafeERC20.safeTransfer(_rewardToken, msg.sender, reward);
-            emit RewardPaid(_rewardToken, msg.sender, reward);            
+            emit RewardPaid(_rewardToken, msg.sender, reward);
+            reward = 0;
         }
-        if(stakerBalance == _amount && staker.reward == 0) {
+        if(stakerBalance == _amount && reward == 0) {
             removeStakerStakingPool(_rewardToken);
         }
     }
