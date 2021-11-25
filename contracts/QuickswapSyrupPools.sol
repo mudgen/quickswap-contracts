@@ -263,14 +263,44 @@ contract QuickswapSyrupPools {
     // dQuick withdraw functions ////////////////////////////////////
     // The is removing staked dQuick but leaving any rewards unclaimed
     ///////////////////////////////////////////////////////////////// 
-    ///////////////////////////////////////////////////////////////// 
+    /////////////////////////////////////////////////////////////////
+
+    // This function contains the logic to withdraw dQUICK and claim rewards
+    // It is used by the getBalance functions and the withdraw and exit functions.
+    function takeOut(address _rewardToken, uint256 _amount, bool _isGetReward) internal {
+        updateReward(_rewardToken, msg.sender);
+        Staking storage staking = s.staking[_rewardToken];
+        Staker storage staker = staking.stakers[msg.sender];
+        uint256 stakerBalance = staker.balance;
+        uint256 reward;
+        if(_isGetReward == true) {
+            reward = staker.reward;
+        }
+        if(_amount == 0 && reward == 0) {
+            revert("Cannot withdraw 0 balance and claim 0 rewards");            
+        }
+        if(_amount > 0) {
+            unchecked {        
+                require(_amount <= stakerBalance, "Amount to withdraw is greater than balance");
+                staking.totalSupply -= _amount;            
+                staker.balance = stakerBalance - _amount;
+            }
+            emit Withdrawn(_rewardToken, msg.sender, _amount);
+        }        
+        if (reward > 0) {
+            staker.reward = 0;
+            SafeERC20.safeTransfer(_rewardToken, msg.sender, reward);
+            emit RewardPaid(_rewardToken, msg.sender, reward);
+            reward = 0;
+        }        
+        if(stakerBalance == _amount && reward == 0) {
+            removeStakerStakingPool(_rewardToken);
+        }
+    }
 
     function removeStakerStakingPool(address _rewardToken) internal {
         uint256 lastIndex =  s.stakerRewardTokens[msg.sender].length - 1;
-        uint256 index = s.stakerRewardTokenIndex[msg.sender][_rewardToken];
-        if(index == 0) {
-            require(s.stakerRewardTokens[msg.sender][0] == _rewardToken, "Pool isn't staked and no reward");
-        }
+        uint256 index = s.stakerRewardTokenIndex[msg.sender][_rewardToken];        
         if(lastIndex != index) {
             address lastRewardToken = s.stakerRewardTokens[msg.sender][lastIndex];
             s.stakerRewardTokens[msg.sender][index] = lastRewardToken;
@@ -278,28 +308,13 @@ contract QuickswapSyrupPools {
         }
         s.stakerRewardTokens[msg.sender].pop();
         delete s.stakerRewardTokenIndex[msg.sender][_rewardToken];
-    }
-    
-    function _withdraw(address _rewardToken, uint256 _amount) internal {        
-        require(_amount > 0, "Cannot withdraw 0");        
-        updateReward(_rewardToken, msg.sender);
-        Staking storage staking = s.staking[_rewardToken];        
-        Staker storage staker = staking.stakers[msg.sender];
-        uint256 stakerBalance = staker.balance;        
-        require(_amount <= stakerBalance, "Amount to withdraw is greater than balance");
-        staking.totalSupply -= _amount;               
-        stakerBalance = stakerBalance - _amount;
-        staker.balance = stakerBalance;
-        if(stakerBalance == 0 && staker.reward == 0) {
-            removeStakerStakingPool(_rewardToken);
-        }
-        emit Withdrawn(_rewardToken, msg.sender, _amount);        
-    }
+    }  
 
     function _withdraw(StakeInput[] calldata _stakes) internal returns (uint256 totalWithdrawAmount_) {
-        for(uint256 i; i < _stakes.length; i++) {
-            _withdraw(_stakes[i].rewardToken, _stakes[i].amount);
-            totalWithdrawAmount_ += _stakes[i].amount;
+        for(uint256 i; i < _stakes.length; i++) {            
+            uint256 amount = _stakes[i].amount;
+            totalWithdrawAmount_ += amount;
+            takeOut(_stakes[i].rewardToken, amount, false);            
         }
     }
 
@@ -318,7 +333,7 @@ contract QuickswapSyrupPools {
             address rewardToken = _rewardTokens[i];
             uint256 balance = s.staking[rewardToken].stakers[msg.sender].balance;
             totalWithdrawAmount_ += balance;
-            _withdraw(rewardToken, balance);      
+            takeOut(rewardToken, balance, false);
         }        
     }
 
@@ -336,9 +351,9 @@ contract QuickswapSyrupPools {
         address[] storage rewardTokens = s.stakerRewardTokens[msg.sender];                
         for(uint256 i = rewardTokens.length - 1;; i--) {
             address rewardToken = rewardTokens[i];
-            uint256 amount = s.staking[rewardToken].stakers[msg.sender].balance;
-            totalWithdrawAmount_ += amount;
-            _withdraw(rewardToken, amount);
+            uint256 balance = s.staking[rewardToken].stakers[msg.sender].balance;
+            totalWithdrawAmount_ += balance;
+            takeOut(rewardToken, balance, false);
             if(i == 0) {
                 break;
             }
@@ -360,29 +375,15 @@ contract QuickswapSyrupPools {
     /////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////
 
-    function _getRewards(address rewardToken) internal {
-        updateReward(rewardToken, msg.sender);
-        Staker storage staker = s.staking[rewardToken].stakers[msg.sender];
-        uint256 reward = staker.reward;
-        if (reward > 0) {
-            staker.reward = 0;
-            SafeERC20.safeTransfer(rewardToken, msg.sender, reward);                
-            emit RewardPaid(rewardToken, msg.sender, reward);
-            if(staker.balance == 0) {
-                removeStakerStakingPool(rewardToken);
-            }
-        }
-    }
-
     function getRewards(address[] calldata _rewardTokens) external {
         for(uint256 i; i < _rewardTokens.length; i++) {
-            _getRewards(_rewardTokens[i]);            
+            takeOut(_rewardTokens[i], 0, true);
         }        
     }
 
     function getAllRewards() external {        
-        for(uint256 i = s.stakerRewardTokens[msg.sender].length - 1;; i--) {        
-            _getRewards(s.stakerRewardTokens[msg.sender][i]);
+        for(uint256 i = s.stakerRewardTokens[msg.sender].length - 1;; i--) {
+            takeOut(s.stakerRewardTokens[msg.sender][i], 0, true);
             if(i == 0) {
                 break;
             }
@@ -394,50 +395,32 @@ contract QuickswapSyrupPools {
     ///////////////////////////////////////////////////////////////// 
     ///////////////////////////////////////////////////////////////// 
 
-    function _exit(address _rewardToken, uint256 _amount) internal {
-        updateReward(_rewardToken, msg.sender);
-        Staking storage staking = s.staking[_rewardToken];
-        Staker storage staker = staking.stakers[msg.sender];
-        if(_amount > 0) {     
-            uint256 stakerBalance = staker.balance;
-            require(_amount <= stakerBalance, "Amount to withdraw is greater than balance");
-            staking.totalSupply -= _amount;            
-            staker.balance = stakerBalance - _amount;                        
-            emit Withdrawn(_rewardToken, msg.sender, _amount);
-        }
-        uint256 reward = staker.reward;
-        if (reward > 0) {
-            staker.reward = 0;
-            SafeERC20.safeTransfer(_rewardToken, msg.sender, reward);                
-            emit RewardPaid(_rewardToken, msg.sender, reward);
-        }                            
-    }
+    
 
     function _exit(StakeInput[] calldata _stakes) internal returns (uint256 totalWithdrawAmount_) {
         for(uint256 i; i < _stakes.length; i++) {
             StakeInput calldata l_stake = _stakes[i];
             totalWithdrawAmount_ += l_stake.amount;
-            _exit(l_stake.rewardToken, l_stake.amount);
+            takeOut(l_stake.rewardToken, l_stake.amount, true);
         }        
     }
 
     function exit(StakeInput[] calldata _stakes) external {
-        uint256 totalWithdrawAmount = _exit(_stakes);
+        uint256 totalWithdrawAmount = _exit(_stakes);        
         payDQuick(totalWithdrawAmount);
     }
 
     function exitAndDragonLair(StakeInput[] calldata _stakes) external {
-        uint256 totalWithdrawAmount = _exit(_stakes);
+        uint256 totalWithdrawAmount = _exit(_stakes);        
         payQuickFromDQuick(totalWithdrawAmount);
     }
 
     function _exitAll(address[] calldata _rewardTokens) internal returns (uint256 totalWithdrawAmount_) {
         for(uint256 i; i < _rewardTokens.length; i++) {
             address rewardToken = _rewardTokens[i];
-            uint256 amount = s.staking[rewardToken].stakers[msg.sender].balance;
-            totalWithdrawAmount_ += amount;
-            _exit(rewardToken, amount);
-            removeStakerStakingPool(rewardToken);
+            uint256 balance = s.staking[rewardToken].stakers[msg.sender].balance;
+            totalWithdrawAmount_ += balance;
+            takeOut(rewardToken, balance, true);
         }
     }
 
@@ -455,11 +438,9 @@ contract QuickswapSyrupPools {
         address[] storage rewardTokens = s.stakerRewardTokens[msg.sender];                
         for(uint256 i = rewardTokens.length - 1;; i--) {
             address rewardToken = rewardTokens[i];
-            uint256 amount = s.staking[rewardToken].stakers[msg.sender].balance;
-            totalWithdrawAmount_ += amount;
-            _exit(rewardToken, amount);
-            rewardTokens.pop();
-            delete s.stakerRewardTokenIndex[msg.sender][rewardToken];
+            uint256 balance = s.staking[rewardToken].stakers[msg.sender].balance;
+            totalWithdrawAmount_ += balance;
+            takeOut(rewardToken, balance, true);            
             if(i == 0) {
                 break;
             }
