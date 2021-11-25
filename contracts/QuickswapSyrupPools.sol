@@ -284,7 +284,7 @@ contract QuickswapSyrupPools {
             }
             emit Withdrawn(_rewardToken, msg.sender, _amount);
         }        
-        if (_isGetReward == true) {
+        if (_isGetReward == true && reward > 0) {
             staker.reward = 0;
             SafeERC20.safeTransfer(_rewardToken, msg.sender, reward);
             emit RewardPaid(_rewardToken, msg.sender, reward);
