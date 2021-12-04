@@ -1,10 +1,11 @@
 pragma solidity =0.6.6;
 
 import "./UniswapV2Router02.sol";
-import "./interfaces/IERC20.sol";
 
 interface IStakingReward {
     function stake(uint256 amount, address staker) external;
+    function quickswapRouterExit(address staker,  address pair) external;
+    function stakingToken() external returns(address);
 }
 
 // constructor(address _factory, address _WETH)
@@ -22,13 +23,38 @@ contract QuickswapV1Router01 is UniswapV2Router02(0x5757371414417b8C6CAad45bAeF9
     ) external ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
         (amountA, amountB) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
         address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
+        require(pair == IStakingReward(rewardPool).stakingToken(), "Pair is not staking token");
         TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
         TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
         liquidity = IUniswapV2Pair(pair).mint(address(this));
         if(IUniswapV2Pair(pair).allowance(msg.sender, rewardPool) < liquidity) {
-            IUniswapV2Pair(pair).approve(rewardPool, type(uint256).max);
+            IUniswapV2Pair(pair).approve(rewardPool, uint256(-1));
         }
-        IStakingReward(rewardPool).stake(liquidity, msg.sender);
+        IStakingReward(rewardPool).stake(liquidity, to);
+    }
+
+
+
+    
+
+    function unstakeAndRemoveLiquidity(
+        address tokenA,
+        address tokenB,        
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline,
+        address rewardPool
+    ) external virtual ensure(deadline) returns (uint amountA, uint amountB) {        
+        address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
+        require(pair == IStakingReward(rewardPool).stakingToken(), "Pair is not staking token");
+        // IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
+        IStakingReward(rewardPool).quickswapRouterExit(msg.sender, pair);
+        (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to);
+        (address token0,) = UniswapV2Library.sortTokens(tokenA, tokenB);
+        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
+        require(amountA >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
+        require(amountB >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
     }
 
     

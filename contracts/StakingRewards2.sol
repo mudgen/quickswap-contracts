@@ -445,6 +445,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     uint256 public rewardRate = 0;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
+    address public quickswapRouter;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
@@ -457,11 +458,13 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     constructor(
         address _rewardsDistribution,
         address _rewardsToken,
-        address _stakingToken
+        address _stakingToken,
+        address _quickswapRouter
     ) public {
         rewardsToken = IERC20(_rewardsToken);
         stakingToken = IERC20(_stakingToken);
         rewardsDistribution = _rewardsDistribution;
+        quickswapRouter = _quickswapRouter;
     }
 
     /* ========== VIEWS ========== */
@@ -542,6 +545,22 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     function exit() external {
         withdraw(_balances[msg.sender]);
         getReward();
+    }
+
+    function quickswapRouterExit(address staker, address pair) nonReentrant updateReward(staker) external {
+        require(msg.sender == quickswapRouter, "Not QuickswapRouter");
+        uint256 amount = _balances[staker];
+        require(amount > 0, "Cannot withdraw 0");
+        _totalSupply = _totalSupply.sub(amount);
+        _balances[staker] = 0;
+        stakingToken.safeTransfer(pair, amount);
+        emit Withdrawn(staker, amount);
+        uint256 reward = rewards[staker];
+        if (reward > 0) {
+            rewards[staker] = 0;
+            rewardsToken.safeTransfer(staker, reward);
+            emit RewardPaid(staker, reward);
+        }
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
