@@ -343,6 +343,115 @@ function stakerPools(address _staker) external view returns (StakerPool[] memory
 
 Returns staking information for all Syrup Pools that a specific staker has dQUICK staked in or has rewards available to claim in.
 
+---
+## `QuickswapV1Router01.sol`
+
+The regular router contract that Quickswap has used to swap tokens and add/remove liquidity is [UniswapV2Router02.sol](/contracts/UniswapV2Router02.sol).
+
+The new [QuickswapV1Router01.sol](contracts/QuickswapV1Router01.sol) can be used instead of the `UniswapV2Router02.sol` contract.
+
+The existing `UniswapV2Router02.sol` contract deployed [here](https://polygonscan.com/address/0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff) can still be used, however the new `QuickswapV1Router01.sol` function contains all the same functionality as `UniswapV2Router02.sol` plus additional functions.
+
+The `QuickswapV1Router01.sol` contract inherits the `UniswapV2Router02.sol` contract so it contains the same exact code for the same exact functions as exists in `UniswapV2Router02.sol`.
+
+`QuickswapV1Router01.sol` has these additional functions:
+
+#### `addLiquidityAndStake`
+```Solidity
+function addLiquidityAndStake(
+    address tokenA,
+    address tokenB,
+    uint amountADesired,
+    uint amountBDesired,
+    uint amountAMin,
+    uint amountBMin,
+    address to,
+    uint deadline,
+    address rewardPool
+) external ensure(deadline) returns (uint amountA, uint amountB, uint liquidity)
+```
+
+This function is similar to the regular `addLiquidity` function but has the additional parameter `rewardPool`. This function adds liquidity to a Quickswap pool and stakes the returned LP token into a Quickswap reward pool. 
+
+This function lets a person add liquidity and stake the LP tokens into a reward pool in a single transaction.
+
+
+---
+#### `addLiquidityETHAndStake`
+```Solidity
+function addLiquidityETHAndStake(
+    address token,
+    uint amountTokenDesired,
+    uint amountTokenMin,
+    uint amountETHMin,
+    address to,
+    uint deadline,
+    address rewardPool
+) external payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity)
+```
+
+This function is similar to the regular `addLiquidityETH` function but has the additional parameter `rewardPool`. This function adds liquidity to a Quickswap pool and stakes the returned LP token into a Quickswap reward pool. 
+
+This function lets a person add liquidity and stake the LP tokens into a reward pool in a single transaction.
+
+---
+#### `unstakeAndRemoveLiquidity`
+```Solidity
+ function unstakeAndRemoveLiquidity(
+    address tokenA,
+    address tokenB,        
+    uint amountAMin,
+    uint amountBMin,
+    address to,
+    uint deadline,
+    address rewardPool
+) public ensure(deadline) returns (uint amountA, uint amountB) {
+```
+
+This function is similar to the regular `removeLiquidity` function but has the additional parameter `rewardPool`. This function unstakes LP tokens from a reward pool and then removes the liquidity from the Quickswap pool.
+
+This function lets a person unstake and remove liquidity in a single transaction.
+
+---
+#### `unstakeAndRemoveLiquidityETH`
+```Solidity
+function unstakeAndRemoveLiquidityETH(
+    address token,        
+    uint amountTokenMin,
+    uint amountETHMin,
+    address to,
+    uint deadline,
+    address rewardPool
+) external ensure(deadline) returns (uint amountToken, uint amountETH)
+```
+
+This function is similar to the regular `removeLiquidityETH` function but has the additional parameter `rewardPool`. This function unstakes LP tokens from a reward pool and then removes the liquidity from the Quickswap pool.
+
+This function lets a person unstake and remove liquidity in a single transaction.
+
+---
+#### `unstakeAndRemoveLiquidityETHSupportingFeeOnTransferTokens`
+```Solidity
+function unstakeAndRemoveLiquidityETHSupportingFeeOnTransferTokens(
+    address token,
+    uint amountTokenMin,
+    uint amountETHMin,
+    address to,
+    uint deadline,
+    address rewardPool
+) external ensure(deadline) returns (uint amountETH)
+```
+
+This function is similar to the regular `removeLiquidityETHSupportingFeeOnTransferTokens` function but has the additional parameter `rewardPool`. This function unstakes LP tokens from a reward pool and then removes the liquidity from the Quickswap pool.
+
+This function lets a person unstake and remove liquidity in a single transaction.
+
+---
+## `StakingRewards2.sol`
+
+
+
+
 
 
 
