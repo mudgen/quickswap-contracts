@@ -449,6 +449,53 @@ This function lets a person unstake and remove liquidity in a single transaction
 ---
 ## `StakingRewards2.sol`
 
+[StakingRewards2.sol](contracts/StakingRewards2.sol) replaces [StakingRewards.sol](https://github.com/QuickSwap/quickswap-core/blob/master/contracts/staking/StakingRewards.sol).
+
+This is the reward contract that Quickswap LP tokens are staked in to earn QUICK.
+
+`StakingRewards2.sol` is a fork of `StakingRewards.sol`. `StakingRewards2.sol` contains only the code changes and code additions necessary to support the new functions provided by `QuickswapV1Router01.sol`.
+
+The new `QuickswapV1Router01.sol` contract needs to the ability to stake LP tokens for a user, and needs the ability to unstake LP tokens for a users. The new `StakingRewards2.sol` contract enables the `QuickswapV1Router01.sol` contract to do this.
+
+The `StakingRewards2.sol` contract has modified `StakingRewards.sol` as little as possible to accommodate `QuickswapV1Router01.sol`.
+
+The `StakingRewards2.sol` contract has the same functionality that works the same way as `StakingRewards.sol` contract and also has the following new functionality to support the `QuickswapV1Router01.sol` contract:
+
+
+#### `StakingRewards2.sol constructor`
+```Solidity
+constructor(
+    address _rewardsDistribution,
+    address _rewardsToken,
+    address _stakingToken,
+    address _quickswapRouter
+) public {
+    rewardsToken = IERC20(_rewardsToken);
+    stakingToken = IERC20(_stakingToken);
+    rewardsDistribution = _rewardsDistribution;
+    quickswapRouter = _quickswapRouter;
+}
+```
+
+The constructor function has an additional `_quickswapRouter` parameter that is used to store the address of the deployed `QuickswapV1Router01.sol` contract. This is needed for the `StakingRewards2.sol` contract to authorize the `QuickswapV1Router01.sol` contract to unstake Quickswap LP tokens on the behalf of a user.
+
+---
+#### `stake(uint256 amount, address staker) external`
+
+This function allows someone to stake tokens for another person or address. The tokens are transferred from `msg.sender` to the `StakingRewards2.sol` contract and assigned to `staker`.
+
+The `addLiquidityAndStake` function from the `QuickswapV1Router01.sol` contract calls this function to stake LP tokens for a user.
+
+There is no authorization on this function so anyone can stake tokens for any address.
+
+#### `function quickswapRouterExit(address staker, address pair) external`
+
+This function allows the `QuickswapV1Router01.sol` contract to unstake and claim rewards for a staker.
+
+The `unstakeAndRemoveLiquidity` function from the `QuickswapV1Router01.sol` contract calls this function.
+
+Only the `QuickswapV1Router01.sol` address specified by the `_quickswapRouter` parameter of the `StakingRewards2.sol` [constructor function](#stakingrewards2sol-constructor) can call this function.
+
 
 
 
