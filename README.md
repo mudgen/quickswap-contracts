@@ -455,7 +455,7 @@ This is the reward contract that Quickswap LP tokens are staked in to earn QUICK
 
 `StakingRewards2.sol` is a fork of `StakingRewards.sol`. `StakingRewards2.sol` contains only the code changes and code additions necessary to support the new functions provided by `QuickswapV1Router01.sol`.
 
-The new `QuickswapV1Router01.sol` contract needs to the ability to stake LP tokens for a user, and needs the ability to unstake LP tokens for a users. The new `StakingRewards2.sol` contract enables the `QuickswapV1Router01.sol` contract to do this.
+The new `QuickswapV1Router01.sol` contract needs the ability to stake LP tokens for a user, and needs the ability to unstake LP tokens for a user. The new `StakingRewards2.sol` contract enables the `QuickswapV1Router01.sol` contract to do this.
 
 The `StakingRewards2.sol` contract has modified `StakingRewards.sol` as little as possible to accommodate `QuickswapV1Router01.sol`.
 
