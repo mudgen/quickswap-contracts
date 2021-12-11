@@ -488,6 +488,7 @@ The `addLiquidityAndStake` function from the `QuickswapV1Router01.sol` contract 
 
 There is no authorization on this function so anyone can stake tokens for any address.
 
+---
 #### `function quickswapRouterExit(address staker, address pair) external`
 
 This function allows the `QuickswapV1Router01.sol` contract to unstake and claim rewards for a staker.
